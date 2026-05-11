@@ -12,6 +12,42 @@ import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 
 const store = useMainStore()
 const isLoading = computed(() => store.isLoading)
+const restaurantSettings = computed(() => store.settings)
+
+// Time logic for Open/Close status
+import { ref, onMounted, onUnmounted } from 'vue'
+const currentTime = ref(new Date())
+let timeInterval = null
+
+onMounted(() => {
+  timeInterval = setInterval(() => {
+    currentTime.value = new Date()
+  }, 60000)
+})
+
+onUnmounted(() => {
+  if (timeInterval) clearInterval(timeInterval)
+})
+
+const isRestaurantOpen = computed(() => {
+  const openStr = restaurantSettings.value.openTime || '10:00'
+  const closeStr = restaurantSettings.value.closeTime || '22:00'
+  
+  const now = currentTime.value
+  const currentMinutes = now.getHours() * 60 + now.getMinutes()
+  
+  const [openH, openM] = openStr.split(':').map(Number)
+  const openMinutes = openH * 60 + openM
+  
+  const [closeH, closeM] = closeStr.split(':').map(Number)
+  const closeMinutes = closeH * 60 + closeM
+  
+  if (closeMinutes < openMinutes) {
+    // Crosses midnight
+    return currentMinutes >= openMinutes || currentMinutes <= closeMinutes
+  }
+  return currentMinutes >= openMinutes && currentMinutes <= closeMinutes
+})
 
 // KPI Calculations
 const totalTables = computed(() => store.tables.length)
@@ -112,10 +148,14 @@ const alerts = computed(() => {
         </div>
         <div v-else>
           <div class="page-title-wrap">
-            <span class="page-title">Command Center</span>
+            <span class="page-title">{{ restaurantSettings.restaurantName || 'Command Center' }}</span>
             <span class="page-count-badge">{{ totalTables }}</span>
           </div>
-          <div class="page-subtitle">Hari ini: 10:00 - 22:00 &nbsp;•&nbsp; Status: <span style="color:var(--brand-600);font-weight:600">Buka</span></div>
+          <div class="page-subtitle">
+            Hari ini: {{ restaurantSettings.openTime }} - {{ restaurantSettings.closeTime }} &nbsp;•&nbsp; Status: 
+            <span v-if="isRestaurantOpen" style="color:var(--brand-600);font-weight:600">Buka</span>
+            <span v-else style="color:#DC2626;font-weight:600">Tutup</span>
+          </div>
         </div>
       </div>
       <div style="display:flex;gap:8px;">
@@ -134,27 +174,45 @@ const alerts = computed(() => {
       </template>
       <template v-else>
         <div class="stat-card" style="padding: 16px;">
-          <div class="stat-label" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Tersedia</div>
+          <div class="stat-label" style="display: flex; align-items: center; white-space: nowrap;">
+            Tersedia 
+            <span class="tooltip-icon" data-tooltip="Jumlah meja yang kosong dan siap digunakan saat ini.">?</span>
+          </div>
           <div class="stat-value" style="color:var(--status-available)">{{ availableCount }}<span style="font-size:14px;color:var(--text-muted)">/{{ totalTables }}</span></div>
         </div>
         <div class="stat-card" style="padding: 16px;">
-          <div class="stat-label" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Reserved</div>
+          <div class="stat-label" style="display: flex; align-items: center; white-space: nowrap;">
+            Reserved 
+            <span class="tooltip-icon" data-tooltip="Meja yang sudah dipesan namun tamu belum tiba.">?</span>
+          </div>
           <div class="stat-value" style="color:#2563EB">{{ reservedCount }}</div>
         </div>
         <div class="stat-card" style="padding: 16px;">
-          <div class="stat-label" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Terisi</div>
+          <div class="stat-label" style="display: flex; align-items: center; white-space: nowrap;">
+            Terisi 
+            <span class="tooltip-icon" data-tooltip="Meja yang sedang digunakan oleh tamu saat ini.">?</span>
+          </div>
           <div class="stat-value" style="color:#DC2626">{{ occupiedCount }}</div>
         </div>
         <div class="stat-card" style="padding: 16px;">
-          <div class="stat-label" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Cleaning</div>
+          <div class="stat-label" style="display: flex; align-items: center; white-space: nowrap;">
+            Cleaning 
+            <span class="tooltip-icon" data-tooltip="Meja yang sedang dalam proses pembersihan.">?</span>
+          </div>
           <div class="stat-value" style="color:#D97706">{{ cleaningCount }}</div>
         </div>
         <div class="stat-card" style="padding: 16px;">
-          <div class="stat-label" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Booking</div>
+          <div class="stat-label" style="display: flex; align-items: center; white-space: nowrap;">
+            Booking 
+            <span class="tooltip-icon" data-tooltip="Total reservasi yang dijadwalkan untuk hari ini.">?</span>
+          </div>
           <div class="stat-value">{{ todayBookings.length }}</div>
         </div>
         <div class="stat-card" style="padding: 16px;">
-          <div class="stat-label" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Waitlist</div>
+          <div class="stat-label" style="display: flex; align-items: center; white-space: nowrap;">
+            Waitlist 
+            <span class="tooltip-icon" data-tooltip="Jumlah antrean tamu yang menunggu meja kosong.">?</span>
+          </div>
           <div class="stat-value">{{ waitingListCount }}</div>
         </div>
       </template>

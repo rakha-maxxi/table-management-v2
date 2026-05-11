@@ -3,7 +3,20 @@ import { useMainStore } from '@/stores/mainStore'
 import { toast } from 'vue-sonner'
 import { RiDownloadLine, RiSettings3Line } from 'vue-remix-icons'
 
+import { ref } from 'vue'
+
 const store = useMainStore()
+
+const restaurantSettings = ref({
+  restaurantName: store.settings?.restaurantName || 'Mejaaa Resto',
+  openTime: store.settings?.openTime || '10:00',
+  closeTime: store.settings?.closeTime || '22:00'
+})
+
+const saveSettings = () => {
+  store.updateSettings(restaurantSettings.value)
+  toast.success('Pengaturan restoran berhasil disimpan')
+}
 
 const exportData = async () => {
   await store.exportData()
@@ -33,15 +46,25 @@ const resetData = async () => {
         </div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
       <div class="card">
-        <div class="card-header"><span class="card-title">Aturan Reservasi</span></div>
+        <div class="card-header"><span class="card-title">Pengaturan Restoran</span></div>
         <div class="card-body">
-          <div class="form-group"><label class="form-label" style="display:flex;align-items:center;">Durasi Default (mnt) <span class="tooltip-icon" data-tooltip="Waktu standar yang dialokasikan untuk reservasi baru (mis. 90 menit).">?</span></label><input class="form-input" value="90" disabled></div>
-          <div class="form-group"><label class="form-label" style="display:flex;align-items:center;">Waktu Jeda (mnt) <span class="tooltip-icon" data-tooltip="Waktu jeda setelah reservasi selesai sebelum meja bisa dipesan lagi.">?</span></label><input class="form-input" value="15" disabled></div>
-          <div class="form-group"><label class="form-label" style="display:flex;align-items:center;">Waktu Toleransi (mnt) <span class="tooltip-icon" data-tooltip="Waktu toleransi keterlambatan sebelum tamu ditandai sebagai Tidak Hadir.">?</span></label><input class="form-input" value="15" disabled></div>
-          <div class="form-group"><label class="form-label" style="display:flex;align-items:center;">Durasi Pembersihan (mnt) <span class="tooltip-icon" data-tooltip="Waktu yang dibutuhkan untuk membersihkan meja setelah tamu pergi.">?</span></label><input class="form-input" value="10" disabled></div>
-          <p style="font-size:12px;color:var(--text-muted);margin-top:8px">Pengaturan sudah diprakonfigurasi untuk tujuan demo.</p>
+          <div class="form-group">
+            <label class="form-label">Nama Restoran</label>
+            <input class="form-input" v-model="restaurantSettings.restaurantName">
+          </div>
+          <div style="display:flex;gap:12px;">
+            <div class="form-group" style="flex:1;">
+              <label class="form-label">Jam Buka</label>
+              <input class="form-input" type="time" v-model="restaurantSettings.openTime">
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label class="form-label">Jam Tutup</label>
+              <input class="form-input" type="time" v-model="restaurantSettings.closeTime">
+            </div>
+          </div>
+          <button class="btn btn-primary" @click="saveSettings">Simpan Pengaturan</button>
         </div>
       </div>
       <div class="card">
@@ -54,6 +77,18 @@ const resetData = async () => {
             </button>
             <button class="btn btn-danger" @click="resetData">Atur Ulang Data</button>
           </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Aturan Reservasi</span></div>
+        <div class="card-body">
+          <div class="form-group"><label class="form-label" style="display:flex;align-items:center;">Durasi Default (mnt) <span class="tooltip-icon" data-tooltip="Waktu standar yang dialokasikan untuk reservasi baru (mis. 90 menit).">?</span></label><input class="form-input" value="90" disabled></div>
+          <div class="form-group"><label class="form-label" style="display:flex;align-items:center;">Waktu Jeda (mnt) <span class="tooltip-icon" data-tooltip="Waktu jeda setelah reservasi selesai sebelum meja bisa dipesan lagi.">?</span></label><input class="form-input" value="15" disabled></div>
+          <div class="form-group"><label class="form-label" style="display:flex;align-items:center;">Waktu Toleransi (mnt) <span class="tooltip-icon" data-tooltip="Waktu toleransi keterlambatan sebelum tamu ditandai sebagai Tidak Hadir.">?</span></label><input class="form-input" value="15" disabled></div>
+          <div class="form-group"><label class="form-label" style="display:flex;align-items:center;">Durasi Pembersihan (mnt) <span class="tooltip-icon" data-tooltip="Waktu yang dibutuhkan untuk membersihkan meja setelah tamu pergi.">?</span></label><input class="form-input" value="10" disabled></div>
+          <p style="font-size:12px;color:var(--text-muted);margin-top:8px">Pengaturan sudah diprakonfigurasi untuk tujuan demo.</p>
         </div>
       </div>
     </div>

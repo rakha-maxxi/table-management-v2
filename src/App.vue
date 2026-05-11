@@ -13,7 +13,9 @@ import {
   RiHistoryLine,
   RiSettings3Line,
   RiArrowUpSLine,
-  RiSearchLine
+  RiSearchLine,
+  RiMenuFoldLine,
+  RiMenuUnfoldLine
 } from 'vue-remix-icons'
 
 const router = useRouter()
@@ -28,6 +30,12 @@ const isSidebarHidden = computed(() => {
   const customerMode = store.currentPersona.id === 'customer'
   return customerMode && route.name !== 'customer-booking' && route.name !== 'floor-plan'
 })
+
+const isSidebarMinimized = ref(localStorage.getItem('mejaaa_sidebar_minimized') === 'true')
+const toggleSidebar = () => {
+  isSidebarMinimized.value = !isSidebarMinimized.value
+  localStorage.setItem('mejaaa_sidebar_minimized', isSidebarMinimized.value)
+}
 
 const isAdmin = computed(() => ['owner', 'admin', 'manager'].includes(store.currentPersona.id))
 const isStaff = computed(() => ['host', 'waiter', 'cleaner'].includes(store.currentPersona.id))
@@ -67,7 +75,7 @@ const selectPersona = (id) => {
   <Toaster position="top-center" richColors />
   <div class="app-shell" @click="showPersonaDropdown = false">
     <!-- SIDEBAR -->
-    <aside class="sidebar" id="sidebar" v-if="!isCustomer">
+    <aside class="sidebar" id="sidebar" v-if="!isCustomer" :class="{ 'minimized': isSidebarMinimized }">
       <div class="sidebar-logo">
         <div class="logo-icon">M</div>
         <span class="logo-text">Mejaaa</span>
@@ -134,6 +142,10 @@ const selectPersona = (id) => {
     <div class="main-content">
       <header class="topbar" v-if="!isCustomer">
         <div class="topbar-left">
+          <button class="btn btn-ghost btn-icon" style="margin-right: 8px; color: var(--text-secondary);" @click="toggleSidebar">
+            <RiMenuUnfoldLine v-if="isSidebarMinimized" size="18" />
+            <RiMenuFoldLine v-else size="18" />
+          </button>
           <span class="topbar-title">{{ String(route.name).toUpperCase() }}</span>
         </div>
         <div class="topbar-right">

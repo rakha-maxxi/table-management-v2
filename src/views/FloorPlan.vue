@@ -51,7 +51,14 @@ const activeBooking = computed(() => {
 })
 
 function onClickTable(t) {
-  if (isCustomer.value) return // handled by mousedown
+  if (isCustomer.value) {
+    if (t.status === 'available') {
+      openBookingModal(t)
+    } else {
+      selectedDetailTable.value = t
+    }
+    return
+  }
   selectedDetailTable.value = t
 }
 
@@ -81,6 +88,7 @@ const dragState = ref({
 })
 
 function onMouseDown(e, t) {
+  if (isCustomer.value) return
   if (!isAdmin.value) {
     selectedDetailTable.value = t
     return
@@ -279,7 +287,7 @@ async function submitBooking() {
             
             <div v-if="selectedDetailTable.notes" style="margin-top:8px;font-size:12px;color:var(--text-muted)">Catatan: {{ selectedDetailTable.notes }}</div>
           </div>
-          <div class="detail-actions">
+          <div class="detail-actions" v-if="!isCustomer">
             <label class="form-label" style="margin-bottom:4px">Ubah Status</label>
             <select class="form-select" :value="selectedDetailTable.status" @change="e => quickChangeStatus(e.target.value)" style="font-size:12px" :disabled="isCleaner && selectedDetailTable.status !== 'cleaning'">
               <option value="available" :disabled="isCleaner">Tersedia</option>
@@ -296,6 +304,21 @@ async function submitBooking() {
 
     <!-- Booking Modal for Customer -->
     <BaseModal v-if="isCustomer" v-model="showBookingModal" :title="`Pesan Meja ${selectedTable?.code}`">
+      <!-- Table Info Summary -->
+      <div v-if="selectedTable" class="booking-table-info">
+        <div class="booking-table-badge">
+          {{ selectedTable.code }}
+        </div>
+        <div class="booking-table-meta">
+          <div class="booking-table-room">📍 {{ roomName(selectedTable.room_id) }}</div>
+          <div class="booking-table-details">
+            <span class="booking-table-chip">👥 {{ selectedTable.capacity_min }}–{{ selectedTable.capacity_max }} Pax</span>
+            <span class="booking-table-chip">🪑 {{ selectedTable.chair_count }} Kursi</span>
+            <span class="booking-table-chip" style="text-transform: capitalize;">{{ selectedTable.shape }}</span>
+          </div>
+        </div>
+      </div>
+
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Nama Anda *</label>
@@ -328,5 +351,62 @@ async function submitBooking() {
 .clickable:hover {
   filter: brightness(1.1);
   transform: scale(1.05);
+}
+
+/* Booking Modal – Table Info Card */
+.booking-table-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+}
+.booking-table-badge {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--brand-600);
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+  border-radius: var(--radius-md);
+  letter-spacing: 0.5px;
+}
+.booking-table-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.booking-table-room {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+.booking-table-details {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.booking-table-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  padding: 2px 8px;
+  border-radius: 99px;
+  white-space: nowrap;
 }
 </style>

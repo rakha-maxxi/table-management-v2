@@ -17,7 +17,12 @@ export const useMainStore = defineStore('mainStore', {
       { id: 'customer', name: 'Tamu', role: 'Pelanggan', initials: 'TM' }
     ],
     currentPersonaId: localStorage.getItem('mejaaa_persona') || 'admin',
-    isLoading: false
+    isLoading: false,
+    settings: JSON.parse(localStorage.getItem('mejaaa_settings')) || {
+      restaurantName: 'Mejaaa Resto',
+      openTime: '10:00',
+      closeTime: '22:00'
+    }
   }),
 
   getters: {
@@ -46,6 +51,13 @@ export const useMainStore = defineStore('mainStore', {
       this.currentPersonaId = id;
       localStorage.setItem('mejaaa_persona', id);
       this.logAudit('USER_ROLE_CHANGED', 'user', 'self', null, { role: id }, this.currentPersona.name);
+    },
+
+    updateSettings(newSettings) {
+      const oldSettings = { ...this.settings };
+      this.settings = { ...this.settings, ...newSettings };
+      localStorage.setItem('mejaaa_settings', JSON.stringify(this.settings));
+      this.logAudit('SETTINGS_UPDATED', 'settings', 'general', oldSettings, this.settings);
     },
     
     async loadAllData() {
