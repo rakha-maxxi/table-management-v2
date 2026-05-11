@@ -1,3 +1,4 @@
+<script setup>
 import { useMainStore } from '@/stores/mainStore'
 import { computed } from 'vue'
 import {
@@ -125,10 +126,12 @@ const alerts = computed(() => {
     
     <!-- TOP KPI CARDS -->
     <div class="stat-grid" style="grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 24px;">
-      <div v-for="i in 6" :key="i" class="stat-card" style="padding: 16px;" v-if="isLoading">
-        <BaseSkeleton width="60px" height="12px" style="margin-bottom:12px" />
-        <BaseSkeleton width="40px" height="24px" />
-      </div>
+      <template v-if="isLoading">
+        <div v-for="i in 6" :key="i" class="stat-card" style="padding: 16px;">
+          <BaseSkeleton width="60px" height="12px" style="margin-bottom:12px" />
+          <BaseSkeleton width="40px" height="24px" />
+        </div>
+      </template>
       <template v-else>
         <div class="stat-card" style="padding: 16px;">
           <div class="stat-label" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Tersedia</div>
