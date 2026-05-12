@@ -18,6 +18,11 @@ const isCleaner = computed(() => store.currentPersona.id === 'cleaner')
 const personas = computed(() => store.personas)
 
 const rooms = computed(() => store.rooms)
+
+const shapeToIndo = (shape) => {
+  const map = { square: 'Persegi', round: 'Bundar', rectangle: 'Persegi Panjang', oval: 'Oval', booth: 'Booth' }
+  return map[shape] || shape
+}
 const selectedRoomId = ref('')
 const showPersonaDropdown = ref(false)
 
@@ -197,7 +202,7 @@ async function submitBooking() {
 
         <!-- Persona Switcher for Customer Demo -->
         <div class="dropdown-container" v-if="isCustomer" style="position:relative; z-index:100;">
-          <button class="btn btn-secondary btn-sm" @click.stop="showPersonaDropdown = !showPersonaDropdown">
+          <button class="btn btn-secondary" @click.stop="showPersonaDropdown = !showPersonaDropdown">
             Ganti Peran (Demo)
           </button>
           <div class="dropdown-menu" :class="{ open: showPersonaDropdown }" style="width:200px;right:0;left:auto;top:calc(100% + 4px);bottom:auto;text-align:left;">
@@ -274,7 +279,7 @@ async function submitBooking() {
           </div>
           <div class="detail-body">
             <div class="detail-row"><span class="detail-label">Ruangan</span><span class="detail-value">{{ roomName(selectedDetailTable.room_id) }}</span></div>
-            <div class="detail-row"><span class="detail-label">Bentuk</span><span class="detail-value" style="text-transform:capitalize">{{ selectedDetailTable.shape }}</span></div>
+            <div class="detail-row"><span class="detail-label">Bentuk</span><span class="detail-value" style="text-transform:capitalize">{{ shapeToIndo(selectedDetailTable.shape) }}</span></div>
             <div class="detail-row"><span class="detail-label">Kursi</span><span class="detail-value">{{ selectedDetailTable.chair_count }}</span></div>
             <div class="detail-row"><span class="detail-label">Kapasitas</span><span class="detail-value">{{ selectedDetailTable.capacity_min }}-{{ selectedDetailTable.capacity_max }}</span></div>
             <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value"><span class="badge" :class="'badge-' + selectedDetailTable.status">{{ selectedDetailTable.status }}</span></span></div>
@@ -306,7 +311,7 @@ async function submitBooking() {
     <BaseModal v-if="isCustomer" v-model="showBookingModal" :title="`Pesan Meja ${selectedTable?.code}`">
       <!-- Table Info Summary -->
       <div v-if="selectedTable" class="booking-table-info">
-        <div class="booking-table-badge">
+        <div class="booking-table-badge" :data-shape="selectedTable.shape">
           {{ selectedTable.code }}
         </div>
         <div class="booking-table-meta">
@@ -314,7 +319,7 @@ async function submitBooking() {
           <div class="booking-table-details">
             <span class="booking-table-chip">👥 {{ selectedTable.capacity_min }}–{{ selectedTable.capacity_max }} Pax</span>
             <span class="booking-table-chip">🪑 {{ selectedTable.chair_count }} Kursi</span>
-            <span class="booking-table-chip" style="text-transform: capitalize;">{{ selectedTable.shape }}</span>
+            <span class="booking-table-chip" style="text-transform: capitalize;">{{ shapeToIndo(selectedTable.shape) }}</span>
           </div>
         </div>
       </div>
@@ -377,6 +382,15 @@ async function submitBooking() {
   font-size: 14px;
   border-radius: var(--radius-md);
   letter-spacing: 0.5px;
+}
+.booking-table-badge[data-shape="round"], .booking-table-badge[data-shape="oval"] {
+  border-radius: 50%;
+}
+.booking-table-badge[data-shape="rectangle"], .booking-table-badge[data-shape="oval"] {
+  width: 64px;
+}
+.booking-table-badge[data-shape="booth"] {
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
 }
 .booking-table-meta {
   flex: 1;

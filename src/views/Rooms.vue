@@ -2,11 +2,21 @@
 import { ref, computed } from 'vue'
 import { useMainStore } from '@/stores/mainStore'
 import BaseModal from '@/components/ui/BaseModal.vue'
+import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import { toast } from 'vue-sonner'
 import { RiAddLine, RiPencilLine, RiDeleteBinLine, RiLayoutMasonryLine } from 'vue-remix-icons'
 
 const store = useMainStore()
+const isLoading = computed(() => store.isLoading)
 const rooms = computed(() => store.rooms)
+const filteredRooms = computed(() => {
+  let res = store.rooms
+  if (store.globalSearchQuery) {
+    const q = store.globalSearchQuery.toLowerCase()
+    res = res.filter(r => r.name.toLowerCase().includes(q) || r.type.toLowerCase().includes(q))
+  }
+  return res
+})
 
 const showModal = ref(false)
 const isEdit = ref(false)
@@ -71,10 +81,14 @@ async function deleteRoom(id) {
         <div class="page-header-icon">
           <RiLayoutMasonryLine />
         </div>
-        <div>
+        <div v-if="isLoading">
+          <BaseSkeleton width="150px" height="24px" style="margin-bottom:8px" />
+          <BaseSkeleton width="250px" height="16px" />
+        </div>
+        <div v-else>
           <div class="page-title-wrap">
             <span class="page-title">Ruangan &amp; Lantai</span>
-            <span class="page-count-badge">{{ rooms.length }}</span>
+            <span class="page-count-badge">{{ filteredRooms.length }}</span>
           </div>
           <div class="page-subtitle">Kelola area restoran Anda</div>
         </div>
@@ -93,22 +107,39 @@ async function deleteRoom(id) {
             </tr>
           </thead>
           <tbody>
-            <tr v-if="rooms.length === 0">
-              <td colspan="6"><div class="empty-state"><h3>Belum ada ruangan</h3></div></td>
-            </tr>
-            <tr v-for="r in rooms" :key="r.id">
-              <td><strong>{{ r.name }}</strong></td>
-              <td style="text-transform:capitalize">{{ r.type }}</td>
-              <td>{{ r.floor_number }}</td>
-              <td>{{ tableCount(r.id) }} meja</td>
-              <td><span class="badge" :class="'badge-' + r.status">{{ r.status }}</span></td>
-              <td>
-                <div style="display:flex;gap:4px">
-                  <button class="btn btn-ghost btn-sm btn-icon" @click="openModal(r)" title="Edit"><RiPencilLine size="14" /></button>
-                  <button class="btn btn-ghost btn-sm btn-icon" @click="deleteRoom(r.id)" title="Hapus"><RiDeleteBinLine size="14" /></button>
-                </div>
-              </td>
-            </tr>
+            <template v-if="isLoading">
+              <tr v-for="i in 4" :key="'skel-'+i">
+                <td><BaseSkeleton width="120px" /></td>
+                <td><BaseSkeleton width="80px" /></td>
+                <td><BaseSkeleton width="40px" /></td>
+                <td><BaseSkeleton width="80px" /></td>
+                <td><BaseSkeleton width="90px" borderRadius="12px" /></td>
+                <td><BaseSkeleton width="60px" /></td>
+              </tr>
+            </template>
+            <template v-else>
+              <tr v-if="filteredRooms.length === 0">
+                <td colspan="6">
+                  <div class="empty-state">
+                    <img src="@/assets/No foldres found.svg" alt="Empty" style="width: 120px; margin-bottom: 16px; opacity: 0.8">
+                    <h3>Belum ada ruangan</h3>
+                  </div>
+                </td>
+              </tr>
+              <tr v-for="r in filteredRooms" :key="r.id">
+                <td><strong>{{ r.name }}</strong></td>
+                <td style="text-transform:capitalize">{{ r.type }}</td>
+                <td>{{ r.floor_number }}</td>
+                <td>{{ tableCount(r.id) }} meja</td>
+                <td><span class="badge" :class="'badge-' + r.status">{{ r.status }}</span></td>
+                <td>
+                  <div style="display:flex;gap:4px">
+                    <button class="btn btn-ghost btn-sm btn-icon" @click="openModal(r)" title="Edit"><RiPencilLine size="14" /></button>
+                    <button class="btn btn-ghost btn-sm btn-icon" @click="deleteRoom(r.id)" title="Hapus"><RiDeleteBinLine size="14" /></button>
+                  </div>
+                </td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>

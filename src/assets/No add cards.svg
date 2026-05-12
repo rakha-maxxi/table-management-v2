@@ -1,0 +1,12 @@
+<svg width="75" height="67" viewBox="0 0 75 67" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M11 13C11 9.68629 13.6863 7 17 7H65C68.3137 7 71 9.68629 71 13V46C71 49.3137 68.3137 52 65 52H17C13.6863 52 11 49.3137 11 46V13Z" fill="white" stroke="#CACACA" stroke-width="2"/>
+<path d="M68 58.6346C68 57.7318 68.7318 57 69.6346 57C70.5373 57 71.2692 57.7318 71.2692 58.6346V64.0544C71.2692 64.9572 70.5373 65.689 69.6346 65.689C68.7318 65.689 68 64.9572 68 64.0544V58.6346Z" stroke="#CACACA" stroke-width="2" stroke-linejoin="round"/>
+<path d="M1 2.63459C1 1.73183 1.73183 1 2.63459 1C3.53735 1 4.26918 1.73183 4.26918 2.63459V8.05441C4.26918 8.95717 3.53735 9.689 2.63459 9.689C1.73183 9.689 1 8.95717 1 8.05441L1 2.63459Z" stroke="#CACACA" stroke-width="2" stroke-linejoin="round"/>
+<path d="M2 21C2 17.6863 4.68629 15 8 15H56C59.3137 15 62 17.6863 62 21V54C62 57.3137 59.3137 60 56 60H8C4.68629 60 2 57.3137 2 54V21Z" fill="white" stroke="#CACACA" stroke-width="2"/>
+<path d="M2 26L2 32L62 32L62 26L2 26Z" fill="#CACACA"/>
+<circle cx="61" cy="17" r="13" fill="white" stroke="#CACACA" stroke-width="2"/>
+<path d="M59.5 10.5C59.5 9.67157 60.1716 9 61 9C61.8284 9 62.5 9.67157 62.5 10.5V16.5C62.5 17.3284 61.8284 18 61 18C60.1716 18 59.5 17.3284 59.5 16.5V10.5Z" stroke="#CACACA" stroke-width="2" stroke-linejoin="round"/>
+<path d="M59.5 23.5C59.5 24.3284 60.1716 25 61 25C61.8284 25 62.5 24.3284 62.5 23.5C62.5 22.6716 61.8284 22 61 22C60.1716 22 59.5 22.6716 59.5 23.5Z" stroke="#CACACA" stroke-width="2" stroke-linejoin="round"/>
+<path d="M26.5 42C25.6716 42 25 42.6716 25 43.5C25 44.3284 25.6716 45 26.5 45L53.5 45C54.3284 45 55 44.3284 55 43.5C55 42.6716 54.3284 42 53.5 42L26.5 42Z" stroke="#CACACA" stroke-width="2" stroke-linejoin="round"/>
+<circle cx="13.5" cy="43.5" r="4.5" fill="#CACACA"/>
+</svg>

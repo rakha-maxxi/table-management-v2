@@ -2,11 +2,13 @@
 import { ref, computed } from 'vue'
 import { useMainStore } from '@/stores/mainStore'
 import BaseModal from '@/components/ui/BaseModal.vue'
+import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import FloorPlan from './FloorPlan.vue'
 import { toast } from 'vue-sonner'
-import { RiAddLine, RiPencilLine, RiDeleteBinLine, RiTableAltLine } from 'vue-remix-icons'
+import { RiAddLine, RiPencilLine, RiDeleteBinLine, RiTableAltLine, RiListUnordered, RiLayoutGridLine } from 'vue-remix-icons'
 
 const store = useMainStore()
+const isLoading = computed(() => store.isLoading)
 const tables = computed(() => store.tables)
 const rooms = computed(() => store.rooms)
 
@@ -18,6 +20,10 @@ const filteredTables = computed(() => {
   let res = tables.value
   if (filterRoom.value) res = res.filter(t => t.room_id === filterRoom.value)
   if (filterStatus.value) res = res.filter(t => t.status === filterStatus.value)
+  if (store.globalSearchQuery) {
+    const q = store.globalSearchQuery.toLowerCase()
+    res = res.filter(t => t.code.toLowerCase().includes(q) || t.shape.toLowerCase().includes(q))
+  }
   return res
 })
 
@@ -113,18 +119,22 @@ async function quickStatusChange(id, newStatus) {
         <div class="page-header-icon">
           <RiTableAltLine />
         </div>
-        <div>
+        <div v-if="isLoading">
+          <BaseSkeleton width="150px" height="24px" style="margin-bottom:8px" />
+          <BaseSkeleton width="250px" height="16px" />
+        </div>
+        <div v-else>
           <div class="page-title-wrap">
             <span class="page-title">Manajemen Meja</span>
-            <span class="page-count-badge">{{ tables.length }}</span>
+            <span class="page-count-badge">{{ filteredTables.length }}</span>
           </div>
           <div class="page-subtitle">Kelola layout dan daftar meja makan</div>
         </div>
       </div>
       <div style="display:flex;gap:8px">
         <div class="segmented-control">
-          <div class="seg-item" :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'">Daftar</div>
-          <div class="seg-item" :class="{ active: viewMode === 'floor' }" @click="viewMode = 'floor'">Denah</div>
+          <div class="seg-item" :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'"><RiListUnordered size="16" />Daftar</div>
+          <div class="seg-item" :class="{ active: viewMode === 'floor' }" @click="viewMode = 'floor'"><RiLayoutGridLine size="16" />Denah</div>
         </div>
         <button class="btn btn-primary" @click="openModal(null)" v-if="isAdmin">
           <RiAddLine size="16" style="margin-right: 4px;" /> Tambah Meja
@@ -158,33 +168,52 @@ async function quickStatusChange(id, newStatus) {
             </tr>
           </thead>
           <tbody>
-            <tr v-if="filteredTables.length === 0">
-              <td colspan="8"><div class="empty-state"><h3>Tidak ada meja</h3></div></td>
-            </tr>
-            <tr v-for="t in filteredTables" :key="t.id">
-              <td><strong>{{ t.code }}</strong></td>
-              <td>{{ roomName(t.room_id) }}</td>
-              <td style="text-transform:capitalize">{{ t.shape }}</td>
-              <td>{{ t.chair_count }}</td>
-              <td>{{ t.capacity_min }}-{{ t.capacity_max }}</td>
-              <td>
-                <select class="form-select" :value="t.status" @change="e => quickStatusChange(t.id, e.target.value)" style="padding:4px 6px;font-size:11px;width:110px">
-                  <option value="available">Tersedia</option>
-                  <option value="occupied">Terisi</option>
-                  <option value="reserved">Dipesan</option>
-                  <option value="cleaning">Dibersihkan</option>
-                  <option value="blocked">Diblokir</option>
-                  <option value="out_of_service">Rusak</option>
-                </select>
-              </td>
-              <td style="font-size:12px;color:var(--text-muted);max-width:120px;overflow:hidden;text-overflow:ellipsis">{{ t.notes || '-' }}</td>
-              <td v-if="isAdmin">
-                <div style="display:flex;gap:4px">
-                  <button class="btn btn-ghost btn-sm btn-icon" @click="openModal(t)" title="Edit"><RiPencilLine size="14" /></button>
-                  <button class="btn btn-ghost btn-sm btn-icon" @click="deleteTable(t.id)" title="Hapus"><RiDeleteBinLine size="14" /></button>
-                </div>
-              </td>
-            </tr>
+            <template v-if="isLoading">
+              <tr v-for="i in 6" :key="'skel-'+i">
+                <td><BaseSkeleton width="50px" /></td>
+                <td><BaseSkeleton width="120px" /></td>
+                <td><BaseSkeleton width="80px" /></td>
+                <td><BaseSkeleton width="40px" /></td>
+                <td><BaseSkeleton width="40px" /></td>
+                <td><BaseSkeleton width="110px" borderRadius="12px" /></td>
+                <td><BaseSkeleton width="100px" /></td>
+                <td v-if="isAdmin"><BaseSkeleton width="60px" /></td>
+              </tr>
+            </template>
+            <template v-else>
+              <tr v-if="filteredTables.length === 0">
+                <td colspan="8">
+                  <div class="empty-state">
+                    <img src="@/assets/No datas found.svg" alt="Empty" style="width: 120px; margin-bottom: 16px; opacity: 0.8">
+                    <h3>Tidak ada meja</h3>
+                  </div>
+                </td>
+              </tr>
+              <tr v-for="t in filteredTables" :key="t.id">
+                <td><strong>{{ t.code }}</strong></td>
+                <td>{{ roomName(t.room_id) }}</td>
+                <td style="text-transform:capitalize">{{ t.shape }}</td>
+                <td>{{ t.chair_count }}</td>
+                <td>{{ t.capacity_min }}-{{ t.capacity_max }}</td>
+                <td>
+                  <select class="form-select" :value="t.status" @change="e => quickStatusChange(t.id, e.target.value)" style="padding:4px 6px;font-size:11px;width:110px">
+                    <option value="available">Tersedia</option>
+                    <option value="occupied">Terisi</option>
+                    <option value="reserved">Dipesan</option>
+                    <option value="cleaning">Dibersihkan</option>
+                    <option value="blocked">Diblokir</option>
+                    <option value="out_of_service">Rusak</option>
+                  </select>
+                </td>
+                <td style="font-size:12px;color:var(--text-muted);max-width:120px;overflow:hidden;text-overflow:ellipsis">{{ t.notes || '-' }}</td>
+                <td v-if="isAdmin">
+                  <div style="display:flex;gap:4px">
+                    <button class="btn btn-ghost btn-sm btn-icon" @click="openModal(t)" title="Edit"><RiPencilLine size="14" /></button>
+                    <button class="btn btn-ghost btn-sm btn-icon" @click="deleteTable(t.id)" title="Hapus"><RiDeleteBinLine size="14" /></button>
+                  </div>
+                </td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>
@@ -217,7 +246,11 @@ async function quickStatusChange(id, newStatus) {
             <div class="form-group">
               <label class="form-label">Bentuk</label>
               <select class="form-select" v-model="formData.shape">
-                <option v-for="s in ['square','round','rectangle','oval','booth']" :key="s" :value="s">{{ s }}</option>
+                <option value="square">Persegi</option>
+                <option value="round">Bundar</option>
+                <option value="rectangle">Persegi Panjang</option>
+                <option value="oval">Oval</option>
+                <option value="booth">Booth</option>
               </select>
             </div>
             <div class="form-group">

@@ -15,7 +15,8 @@ import {
   RiArrowUpSLine,
   RiSearchLine,
   RiMenuFoldLine,
-  RiMenuUnfoldLine
+  RiMenuUnfoldLine,
+  RiRefreshLine
 } from 'vue-remix-icons'
 
 const router = useRouter()
@@ -43,6 +44,22 @@ const canManageMeja = computed(() => isAdmin.value || isStaff.value)
 
 const isCustomer = computed(() => {
   return store.currentPersona.id === 'customer'
+})
+
+const pageTitle = computed(() => {
+  if (!route.name) return ''
+  const name = String(route.name).toLowerCase()
+  switch (name) {
+    case 'dashboard': return 'DASBOR UTAMA'
+    case 'rooms': return 'RUANGAN & LANTAI'
+    case 'tables': return 'MANAJEMEN MEJA'
+    case 'bookings': return 'DAFTAR RESERVASI'
+    case 'settings': return 'PENGATURAN SISTEM'
+    case 'floor-plan': return 'DENAH MEJA'
+    case 'customer-booking': return 'RESERVASI TAMU'
+    case 'audit-logs': return 'LOG AKTIVITAS'
+    default: return String(route.name).toUpperCase()
+  }
 })
 
 const pendingBookingsCount = computed(() => {
@@ -83,26 +100,26 @@ const selectPersona = (id) => {
       <nav class="sidebar-nav">
         <div class="sidebar-section">
           <div class="sidebar-section-label">Ringkasan</div>
-          <a class="nav-item" :class="{ active: route.name === 'dashboard' }" @click="navigate('dashboard')">
+          <a class="nav-item" :class="{ active: route.name === 'dashboard' }" @click="navigate('dashboard')" :title="isSidebarMinimized ? 'Dasbor' : null">
             <RiDashboardLine size="18" />
             <span class="nav-text">Dasbor</span>
           </a>
-          <a class="nav-item" :class="{ active: route.name === 'customer-booking' }" @click="navigate('customer-booking')" v-if="isCustomer">
+          <a class="nav-item" :class="{ active: route.name === 'customer-booking' }" @click="navigate('customer-booking')" v-if="isCustomer" :title="isSidebarMinimized ? 'Pesan Meja' : null">
             <RiTableAltLine size="18" />
             <span class="nav-text">Pesan Meja</span>
           </a>
         </div>
         <div class="sidebar-section" v-if="canManageMeja">
           <div class="sidebar-section-label">Manajemen</div>
-          <a class="nav-item" :class="{ active: route.name === 'rooms' }" @click="navigate('rooms')" v-if="isAdmin">
+          <a class="nav-item" :class="{ active: route.name === 'rooms' }" @click="navigate('rooms')" v-if="isAdmin" :title="isSidebarMinimized ? 'Ruangan' : null">
             <RiLayoutMasonryLine size="18" />
             <span class="nav-text">Ruangan</span>
           </a>
-          <a class="nav-item" :class="{ active: route.name === 'tables' || route.name === 'floor-plan' }" @click="navigate('tables')">
+          <a class="nav-item" :class="{ active: route.name === 'tables' || route.name === 'floor-plan' }" @click="navigate('tables')" :title="isSidebarMinimized ? 'Meja' : null">
             <RiTableAltLine size="18" />
             <span class="nav-text">Meja</span>
           </a>
-          <a class="nav-item" :class="{ active: route.name === 'bookings' }" @click="navigate('bookings')">
+          <a class="nav-item" :class="{ active: route.name === 'bookings' }" @click="navigate('bookings')" :title="isSidebarMinimized ? 'Reservasi' : null">
             <RiCalendarEventLine size="18" />
             <span class="nav-text">Reservasi</span>
             <span class="nav-badge" v-if="pendingBookingsCount > 0">{{ pendingBookingsCount }}</span>
@@ -110,23 +127,23 @@ const selectPersona = (id) => {
         </div>
         <div class="sidebar-section" v-if="isAdmin">
           <div class="sidebar-section-label">Sistem</div>
-          <a class="nav-item" :class="{ active: route.name === 'audit-logs' }" @click="navigate('audit-logs')">
+          <a class="nav-item" :class="{ active: route.name === 'audit-logs' }" @click="navigate('audit-logs')" :title="isSidebarMinimized ? 'Log Aktivitas' : null">
             <RiHistoryLine size="18" />
             <span class="nav-text">Log Aktivitas</span>
           </a>
-          <a class="nav-item" :class="{ active: route.name === 'settings' }" @click="navigate('settings')">
+          <a class="nav-item" :class="{ active: route.name === 'settings' }" @click="navigate('settings')" :title="isSidebarMinimized ? 'Pengaturan' : null">
             <RiSettings3Line size="18" />
             <span class="nav-text">Pengaturan</span>
           </a>
         </div>
       </nav>
-      <div class="sidebar-footer dropdown-container" @click="togglePersonaDropdown" style="cursor:pointer;position:relative">
+      <div class="sidebar-footer dropdown-container" @click="togglePersonaDropdown" style="cursor:pointer;position:relative" :title="isSidebarMinimized ? 'Ganti Persona (' + store.currentPersona.name + ')' : null">
         <div class="avatar" id="current-avatar">{{ store.currentPersona.initials }}</div>
         <div class="user-info">
           <div class="user-name" id="current-user-name">{{ store.currentPersona.name }}</div>
           <div class="user-role" id="current-user-role">{{ store.currentPersona.role }}</div>
         </div>
-        <RiArrowUpSLine style="margin-left:auto; color: #71717A; width: 16px; height: 16px;" />
+        <RiArrowUpSLine class="persona-dropdown-icon" style="color: #71717A; width: 16px; height: 16px;" />
         <div class="dropdown-menu" :class="{ open: showPersonaDropdown }" style="bottom:100%;left:0;margin-bottom:8px">
           <div v-for="p in store.personas" :key="p.id" class="dropdown-item" :class="{ active: p.id === store.currentPersona.id }" @click="selectPersona(p.id)">
             <div style="display:flex;align-items:center;gap:10px">
@@ -146,12 +163,15 @@ const selectPersona = (id) => {
             <RiMenuUnfoldLine v-if="isSidebarMinimized" size="18" />
             <RiMenuFoldLine v-else size="18" />
           </button>
-          <span class="topbar-title">{{ String(route.name).toUpperCase() }}</span>
+          <span class="topbar-title">{{ pageTitle }}</span>
         </div>
         <div class="topbar-right">
+          <button class="btn btn-secondary btn-icon" @click="store.loadAllData()" title="Muat Ulang Data">
+            <RiRefreshLine size="16" :style="{ animation: store.isLoading ? 'spin 1s linear infinite' : 'none' }" />
+          </button>
           <div class="search-bar" style="width:220px">
             <RiSearchLine size="16" />
-            <input class="form-input" type="text" placeholder="Search..." style="font-size:12px;padding:6px 12px 6px 32px">
+            <input class="form-input" type="text" v-model="store.globalSearchQuery" placeholder="Search..." style="font-size:12px;padding:6px 12px 6px 32px">
           </div>
         </div>
       </header>
@@ -163,4 +183,8 @@ const selectPersona = (id) => {
 </template>
 
 <style scoped>
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 </style>

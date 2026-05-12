@@ -279,7 +279,12 @@ const alerts = computed(() => {
             </thead>
             <tbody>
               <tr v-if="nextBookings.length === 0">
-                <td colspan="6"><div class="empty-state" style="padding:24px">Tidak ada booking hari ini.</div></td>
+                <td colspan="6">
+                  <div class="empty-state" style="padding:40px 24px">
+                    <img src="@/assets/No calendar found.svg" alt="Empty" style="width: 100px; margin-bottom: 16px; opacity: 0.8">
+                    <div style="font-size:14px; font-weight:500; color:var(--text-secondary)">Tidak ada booking hari ini.</div>
+                  </div>
+                </td>
               </tr>
               <tr v-for="b in nextBookings" :key="b.id">
                 <td style="font-weight:600">{{ b.start_time }}</td>
@@ -301,7 +306,10 @@ const alerts = computed(() => {
       <div class="card">
         <div class="card-header"><span class="card-title">Aktivitas Terbaru</span></div>
         <div class="card-body">
-          <div v-if="activityLogs.length === 0" class="empty-state" style="padding:20px"><p>Belum ada aktivitas.</p></div>
+          <div v-if="activityLogs.length === 0" class="empty-state" style="padding:40px 20px">
+            <img src="@/assets/No task found.svg" alt="Empty" style="width: 100px; margin-bottom: 16px; opacity: 0.8">
+            <p>Belum ada aktivitas.</p>
+          </div>
           <div class="activity-feed" v-else>
             <div class="activity-item" v-for="log in activityLogs" :key="log.id">
               <div class="activity-icon" style="background:var(--bg-tertiary)">
