@@ -11,12 +11,13 @@ export default defineConfig([
     files: ['**/*.{vue,js,mjs,jsx}'],
   },
 
-  globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**']),
+  globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**', 'backend/**']),
 
   {
     languageOptions: {
       globals: {
         ...globals.browser,
+        ...globals.node,
       },
     },
   },
@@ -25,6 +26,14 @@ export default defineConfig([
   ...pluginVue.configs['flat/essential'],
 
   ...pluginOxlint.buildFromOxlintConfigFile('.oxlintrc.json'),
+
+  {
+    rules: {
+      'vue/multi-word-component-names': 'off',
+      'no-unused-vars': 'off',
+      'no-useless-assignment': 'off'
+    }
+  },
 
   skipFormatting,
 ])

@@ -19,21 +19,22 @@
 ## ✨ Fitur Utama
 
 - 📊 **Command Center Dashboard**  
-  Pantau *Key Performance Indicators* (KPI) operasional secara *real-time*. Dilengkapi dengan *Ops Banner* cerdas untuk mengingatkan durasi *cleaning* meja dan status *waiting list*.
+  Pantau _Key Performance Indicators_ (KPI) operasional secara _real-time_. Dilengkapi dengan _Ops Banner_ cerdas untuk mengingatkan durasi _cleaning_ meja dan status _waiting list_.
 - 🗺️ **Interactive Floor Plan**  
-  Visualisasi denah restoran secara interaktif. Mendukung fitur *drag-and-drop* untuk mengatur tata letak meja dengan kemudahan satu klik untuk mengubah status operasional.
+  Visualisasi denah restoran secara interaktif. Mendukung fitur _drag-and-drop_ untuk mengatur tata letak meja dengan kemudahan satu klik untuk mengubah status operasional.
 - 📅 **Manajemen Reservasi & Waiting List**  
-  Lacak reservasi dari berbagai sumber secara terpusat. Dilengkapi fitur *assignment* meja dan kemampuan *filtering* serta *global search*.
+  Lacak reservasi dari berbagai sumber secara terpusat. Dilengkapi fitur _assignment_ meja dan kemampuan _filtering_ serta _global search_.
 - 👥 **Sistem Peran (Role-Based Access)**  
-  Tampilan UI yang otomatis menyesuaikan konteks peran (*Owner*, *Admin*, *Waiter*, *Cleaner*, hingga *Guest/Customer View*).
+  Tampilan UI yang otomatis menyesuaikan konteks peran (_Owner_, _Admin_, _Waiter_, _Cleaner_, hingga _Guest/Customer View_).
 - 🌐 **Full-Stack API Integration**  
   Menggunakan backend API modern yang sangat cepat (Fastify) dan penyimpanan database relasional persisten (SQLite), memastikan semua aktivitas dan konfigurasi restoran Anda tersimpan dengan aman dan tersinkronisasi.
 - ✨ **Skeleton Loaders & Empty States**  
-  Antarmuka pengguna didukung dengan animasi *skeleton loading* yang mulus serta ilustrasi *empty state* interaktif saat data tidak tersedia.
+  Antarmuka pengguna didukung dengan animasi _skeleton loading_ yang mulus serta ilustrasi _empty state_ interaktif saat data tidak tersedia.
 
 ## 🛠️ Tech Stack
 
 **Frontend**
+
 - **Framework:** Vue 3 (Composition API) + Vite
 - **State Management:** Pinia
 - **Routing:** Vue Router
@@ -42,6 +43,7 @@
 - **Notifications:** Vue Sonner
 
 **Backend**
+
 - **Framework:** Fastify v5
 - **Database:** SQLite (melalui modul `sqlite` & `sqlite3`)
 - **API Documentation:** Swagger (`@fastify/swagger` & `@fastify/swagger-ui`)
@@ -52,6 +54,7 @@
 Proyek ini terbagi menjadi dua bagian: **Frontend** dan **Backend**. Keduanya harus dijalankan agar aplikasi berfungsi penuh.
 
 ### 1. Prasyarat
+
 Pastikan Anda telah menginstal **Node.js** (versi 18+) di komputer Anda.
 
 ### 2. Instalasi & Menjalankan Backend (API)
@@ -65,6 +68,7 @@ npm install
 # Jalankan server backend (dengan nodemon)
 npm run dev
 ```
+
 Backend akan berjalan di `http://localhost:3000`. Anda dapat melihat dokumentasi interaktif API di `http://localhost:3000/docs`.
 
 ### 3. Instalasi & Menjalankan Frontend (UI)
@@ -80,7 +84,8 @@ npm install
 # Jalankan server lokal Vite
 npm run dev
 ```
-Aplikasi Frontend akan berjalan secara default di `http://localhost:5173`. 
+
+Aplikasi Frontend akan berjalan secara default di `http://localhost:5173`.
 
 ## 📂 Struktur Direktori Utama
 
@@ -103,7 +108,7 @@ table-management/
 
 ## 🤝 Kontribusi
 
-Sistem ini didesain sedemikian rupa untuk dapat beradaptasi dengan alur kerja operasional *Food & Beverage* (F&B) modern. Dengan menggunakan arsitektur frontend (Pinia) dan backend (Fastify + SQLite) yang terpisah, memperluas fitur atau mengintegrasikan API pihak ketiga (seperti Payment Gateway) menjadi sangat mudah.
+Sistem ini didesain sedemikian rupa untuk dapat beradaptasi dengan alur kerja operasional _Food & Beverage_ (F&B) modern. Dengan menggunakan arsitektur frontend (Pinia) dan backend (Fastify + SQLite) yang terpisah, memperluas fitur atau mengintegrasikan API pihak ketiga (seperti Payment Gateway) menjadi sangat mudah.
 
 ---
 

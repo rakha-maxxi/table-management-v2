@@ -16,7 +16,11 @@ import {
   RiSearchLine,
   RiMenuFoldLine,
   RiMenuUnfoldLine,
-  RiRefreshLine
+  RiRefreshLine,
+  RiUserLine,
+  RiKeyLine,
+  RiBuildingLine,
+  RiShieldUserLine
 } from 'vue-remix-icons'
 
 const router = useRouter()
@@ -58,6 +62,10 @@ const pageTitle = computed(() => {
     case 'floor-plan': return 'DENAH MEJA'
     case 'customer-booking': return 'RESERVASI TAMU'
     case 'audit-logs': return 'LOG AKTIVITAS'
+    case 'users': return 'MANAJEMEN PENGGUNA'
+    case 'roles': return 'MANAJEMEN PERAN'
+    case 'organizations': return 'STRUKTUR ORGANISASI'
+    case 'organization-access': return 'AKSES ORGANISASI'
     default: return String(route.name).toUpperCase()
   }
 })
@@ -123,6 +131,25 @@ const selectPersona = (id) => {
             <RiCalendarEventLine size="18" />
             <span class="nav-text">Reservasi</span>
             <span class="nav-badge" v-if="pendingBookingsCount > 0">{{ pendingBookingsCount }}</span>
+          </a>
+        </div>
+        <div class="sidebar-section" v-if="isAdmin">
+          <div class="sidebar-section-label">Autentikasi</div>
+          <a class="nav-item" :class="{ active: route.name === 'organizations' }" @click="navigate('organizations')" :title="isSidebarMinimized ? 'Organisasi' : null">
+            <RiBuildingLine size="18" />
+            <span class="nav-text">Organisasi</span>
+          </a>
+          <a class="nav-item" :class="{ active: route.name === 'organization-access' }" @click="navigate('organization-access')" :title="isSidebarMinimized ? 'Akses Organisasi' : null">
+            <RiShieldUserLine size="18" />
+            <span class="nav-text">Akses Organisasi</span>
+          </a>
+          <a class="nav-item" :class="{ active: route.name === 'roles' }" @click="navigate('roles')" :title="isSidebarMinimized ? 'Peran' : null">
+            <RiKeyLine size="18" />
+            <span class="nav-text">Peran</span>
+          </a>
+          <a class="nav-item" :class="{ active: route.name === 'users' }" @click="navigate('users')" :title="isSidebarMinimized ? 'Pengguna' : null">
+            <RiUserLine size="18" />
+            <span class="nav-text">Pengguna</span>
           </a>
         </div>
         <div class="sidebar-section" v-if="isAdmin">

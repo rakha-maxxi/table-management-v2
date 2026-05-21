@@ -126,13 +126,24 @@ function onMouseMove(e) {
 
 async function onMouseUp(e) {
   if (!dragState.value.isDragging) return
+  const tableId = dragState.value.tableId
+  const initialX = dragState.value.initialX
+  const initialY = dragState.value.initialY
+
   dragState.value.isDragging = false
   document.removeEventListener('mousemove', onMouseMove)
   document.removeEventListener('mouseup', onMouseUp)
   
-  const t = store.tables.find(tbl => tbl.id === dragState.value.tableId)
+  const t = store.tables.find(tbl => tbl.id === tableId)
   if (t) {
-    await store.updateTablePosition(t.id, t.x_position, t.y_position)
+    const res = await store.updateTablePosition(t.id, t.x_position, t.y_position, initialX, initialY)
+    if (res && res.error) {
+      toast.error(res.error)
+      t.x_position = initialX
+      t.y_position = initialY
+    } else {
+      toast.success(`Posisi meja ${t.code} berhasil diperbarui`)
+    }
   }
 }
 

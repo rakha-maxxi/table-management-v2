@@ -8,6 +8,10 @@ export const useMainStore = defineStore('mainStore', {
     tables: [],
     bookings: [],
     auditLogs: [],
+    users: [],
+    roles: [],
+    organizations: [],
+    organizationAccess: [],
     personas: [
       { id: 'owner', name: 'Pemilik Restoran', role: 'Pemilik', initials: 'PR' },
       { id: 'admin', name: 'Admin Sistem', role: 'Admin', initials: 'AS' },
@@ -78,12 +82,16 @@ export const useMainStore = defineStore('mainStore', {
     async loadAllData() {
       this.isLoading = true;
       try {
-        const [roomsRes, tablesRes, bookingsRes, logsRes, settingsRes] = await Promise.all([
+        const [roomsRes, tablesRes, bookingsRes, logsRes, settingsRes, usersRes, rolesRes, orgsRes, accessRes] = await Promise.all([
           fetch(`${API_BASE}/rooms`),
           fetch(`${API_BASE}/tables`),
           fetch(`${API_BASE}/bookings`),
           fetch(`${API_BASE}/audit-logs`),
-          fetch(`${API_BASE}/settings`)
+          fetch(`${API_BASE}/settings`),
+          fetch(`${API_BASE}/users`),
+          fetch(`${API_BASE}/roles`),
+          fetch(`${API_BASE}/organizations`),
+          fetch(`${API_BASE}/organization-access`)
         ]);
         
         this.rooms = await roomsRes.json();
@@ -94,6 +102,10 @@ export const useMainStore = defineStore('mainStore', {
           const fetchedSettings = await settingsRes.json();
           this.settings = { ...this.settings, ...fetchedSettings };
         }
+        if (usersRes.ok) this.users = await usersRes.json();
+        if (rolesRes.ok) this.roles = await rolesRes.json();
+        if (orgsRes.ok) this.organizations = await orgsRes.json();
+        if (accessRes.ok) this.organizationAccess = await accessRes.json();
         
         // Empty DB stays empty. No auto-seeding of demo data.
       } catch (err) {
@@ -214,12 +226,13 @@ export const useMainStore = defineStore('mainStore', {
       const idx = this.tables.findIndex(t => t.id === id);
       if (idx === -1) return null;
       const old = { ...this.tables[idx] };
+      const mergedPayload = { ...old, ...data };
       
       try {
         const response = await fetch(`${API_BASE}/tables/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
+          body: JSON.stringify(mergedPayload)
         });
         if (response.ok) {
           const updated = await response.json();
@@ -234,24 +247,41 @@ export const useMainStore = defineStore('mainStore', {
       return null;
     },
 
-    async updateTablePosition(id, x, y) {
+    async updateTablePosition(id, x, y, oldX, oldY) {
       const idx = this.tables.findIndex(t => t.id === id);
-      if (idx === -1) return;
-      const old = { x_position: this.tables[idx].x_position, y_position: this.tables[idx].y_position };
+      if (idx === -1) return { error: 'Meja tidak ditemukan' };
+      
+      const fullOld = { ...this.tables[idx] };
+      const mergedPayload = { ...fullOld, x_position: x, y_position: y };
       
       try {
         const response = await fetch(`${API_BASE}/tables/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ x_position: x, y_position: y })
+          body: JSON.stringify(mergedPayload)
         });
         if (response.ok) {
           const updated = await response.json();
           this.tables[idx] = updated;
-          await this.logAudit('TABLE_MOVED', 'table', id, old, { x_position: x, y_position: y });
+          await this.logAudit('TABLE_MOVED', 'table', id, 
+            { x_position: oldX, y_position: oldY }, 
+            { x_position: x, y_position: y }
+          );
+          return updated;
+        } else {
+          // Revert store values on failure
+          this.tables[idx].x_position = oldX;
+          this.tables[idx].y_position = oldY;
+          const errData = await response.json().catch(() => ({}));
+          return { error: errData.error || 'Gagal menyimpan posisi meja ke server' };
         }
       } catch (err) {
+        if (this.tables[idx]) {
+          this.tables[idx].x_position = oldX;
+          this.tables[idx].y_position = oldY;
+        }
         console.error("Error updating table position:", err);
+        return { error: err.message || 'Gagal terhubung ke server' };
       }
     },
 
@@ -337,12 +367,266 @@ export const useMainStore = defineStore('mainStore', {
       return null;
     },
 
+    // Users Actions
+    async createUser(data) {
+      try {
+        const response = await fetch(`${API_BASE}/users`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (response.ok) {
+          const user = await response.json();
+          this.users.unshift(user);
+          await this.logAudit('USER_CREATED', 'users', user.id, null, user);
+          return user;
+        } else {
+          const errData = await response.json();
+          return { error: errData.error || 'Gagal menambahkan pengguna' };
+        }
+      } catch (err) {
+        console.error("Error creating user:", err);
+        return { error: 'Koneksi error' };
+      }
+    },
+
+    async updateUser(id, data) {
+      const idx = this.users.findIndex(u => u.id === id);
+      if (idx === -1) return null;
+      const old = { ...this.users[idx] };
+      try {
+        const response = await fetch(`${API_BASE}/users/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (response.ok) {
+          const updated = await response.json();
+          this.users[idx] = updated;
+          await this.logAudit('USER_UPDATED', 'users', id, old, updated);
+          return updated;
+        } else {
+          const errData = await response.json();
+          return { error: errData.error || 'Gagal memperbarui pengguna' };
+        }
+      } catch (err) {
+        console.error("Error updating user:", err);
+        return { error: 'Koneksi error' };
+      }
+    },
+
+    async deleteUser(id) {
+      const user = this.users.find(u => u.id === id);
+      try {
+        const response = await fetch(`${API_BASE}/users/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+          this.users = this.users.filter(u => u.id !== id);
+          this.organizationAccess = this.organizationAccess.filter(oa => oa.user_id !== id);
+          if (user) await this.logAudit('USER_DELETED', 'users', id, user, null);
+          return user;
+        } else {
+          const errData = await response.json();
+          return { error: errData.error || 'Gagal menghapus pengguna' };
+        }
+      } catch (err) {
+        console.error("Error deleting user:", err);
+        return { error: 'Koneksi error' };
+      }
+    },
+
+    // Roles Actions
+    async createRole(data) {
+      try {
+        const response = await fetch(`${API_BASE}/roles`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (response.ok) {
+          const role = await response.json();
+          this.roles.push(role);
+          await this.logAudit('ROLE_CREATED', 'roles', role.id, null, role);
+          return role;
+        } else {
+          const errData = await response.json();
+          return { error: errData.error || 'Gagal menambahkan peran' };
+        }
+      } catch (err) {
+        console.error("Error creating role:", err);
+        return { error: 'Koneksi error' };
+      }
+    },
+
+    async updateRole(id, data) {
+      const idx = this.roles.findIndex(r => r.id === id);
+      if (idx === -1) return null;
+      const old = { ...this.roles[idx] };
+      try {
+        const response = await fetch(`${API_BASE}/roles/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (response.ok) {
+          const updated = await response.json();
+          this.roles[idx] = updated;
+          await this.logAudit('ROLE_UPDATED', 'roles', id, old, updated);
+          return updated;
+        } else {
+          const errData = await response.json();
+          return { error: errData.error || 'Gagal memperbarui peran' };
+        }
+      } catch (err) {
+        console.error("Error updating role:", err);
+        return { error: 'Koneksi error' };
+      }
+    },
+
+    async deleteRole(id) {
+      const role = this.roles.find(r => r.id === id);
+      try {
+        const response = await fetch(`${API_BASE}/roles/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+          this.roles = this.roles.filter(r => r.id !== id);
+          if (role) await this.logAudit('ROLE_DELETED', 'roles', id, role, null);
+          return role;
+        } else {
+          const errData = await response.json();
+          return { error: errData.error || 'Gagal menghapus peran' };
+        }
+      } catch (err) {
+        console.error("Error deleting role:", err);
+        return { error: 'Koneksi error' };
+      }
+    },
+
+    // Organizations Actions
+    async createOrg(data) {
+      try {
+        const response = await fetch(`${API_BASE}/organizations`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (response.ok) {
+          const org = await response.json();
+          this.organizations.push(org);
+          await this.logAudit('ORGANIZATION_CREATED', 'organizations', org.id, null, org);
+          return org;
+        } else {
+          const errData = await response.json();
+          return { error: errData.error || 'Gagal menambahkan organisasi' };
+        }
+      } catch (err) {
+        console.error("Error creating organization:", err);
+        return { error: 'Koneksi error' };
+      }
+    },
+
+    async updateOrg(id, data) {
+      const idx = this.organizations.findIndex(o => o.id === id);
+      if (idx === -1) return null;
+      const old = { ...this.organizations[idx] };
+      try {
+        const response = await fetch(`${API_BASE}/organizations/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (response.ok) {
+          const updated = await response.json();
+          this.organizations[idx] = updated;
+          await this.logAudit('ORGANIZATION_UPDATED', 'organizations', id, old, updated);
+          return updated;
+        } else {
+          const errData = await response.json();
+          return { error: errData.error || 'Gagal memperbarui organisasi' };
+        }
+      } catch (err) {
+        console.error("Error updating organization:", err);
+        return { error: 'Koneksi error' };
+      }
+    },
+
+    async deleteOrg(id) {
+      const org = this.organizations.find(o => o.id === id);
+      try {
+        const response = await fetch(`${API_BASE}/organizations/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+          this.organizations = this.organizations.filter(o => o.id !== id);
+          if (org) await this.logAudit('ORGANIZATION_DELETED', 'organizations', id, org, null);
+          return org;
+        } else {
+          const errData = await response.json();
+          return { error: errData.error || 'Gagal menghapus organisasi' };
+        }
+      } catch (err) {
+        console.error("Error deleting organization:", err);
+        return { error: 'Koneksi error' };
+      }
+    },
+
+    // Organization Access Actions
+    async createAccess(data) {
+      try {
+        const response = await fetch(`${API_BASE}/organization-access`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (response.ok) {
+          const mapping = await response.json();
+          this.organizationAccess.unshift(mapping);
+          await this.logAudit('ORGANIZATION_ACCESS_GRANTED', 'organization_access', mapping.id, null, {
+            user: mapping.user_name,
+            role: mapping.role_name,
+            org: mapping.organization_name
+          });
+          return mapping;
+        } else {
+          const errData = await response.json();
+          return { error: errData.error || 'Gagal menetapkan akses' };
+        }
+      } catch (err) {
+        console.error("Error creating organization access:", err);
+        return { error: 'Koneksi error' };
+      }
+    },
+
+    async deleteAccess(id) {
+      const mapping = this.organizationAccess.find(oa => oa.id === id);
+      try {
+        const response = await fetch(`${API_BASE}/organization-access/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+          this.organizationAccess = this.organizationAccess.filter(oa => oa.id !== id);
+          if (mapping) {
+            await this.logAudit('ORGANIZATION_ACCESS_REVOKED', 'organization_access', id, {
+              user: mapping.user_name,
+              role: mapping.role_name,
+              org: mapping.organization_name
+            }, null);
+          }
+          return mapping;
+        } else {
+          const errData = await response.json();
+          return { error: errData.error || 'Gagal mencabut akses' };
+        }
+      } catch (err) {
+        console.error("Error deleting organization access:", err);
+        return { error: 'Koneksi error' };
+      }
+    },
+
     async exportData() {
       const data = {
         rooms: this.rooms,
         tables: this.tables,
         bookings: this.bookings,
-        auditLogs: this.auditLogs
+        auditLogs: this.auditLogs,
+        users: this.users,
+        roles: this.roles,
+        organizations: this.organizations,
+        organizationAccess: this.organizationAccess
       };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -351,20 +635,30 @@ export const useMainStore = defineStore('mainStore', {
     },
 
     async resetData() {
-      // In a real application we would have a backend endpoint to reset data.
-      // For now, we manually delete all items through the API for demo purposes.
+      // Clear organization access first (foreign key dependency)
+      for (const oa of this.organizationAccess) { await this.deleteAccess(oa.id); }
+      for (const u of this.users) { await this.deleteUser(u.id); }
+      for (const o of this.organizations) { await this.deleteOrg(o.id); }
+      for (const r of this.roles) { await this.deleteRole(r.id); }
       for (const t of this.tables) { await this.deleteTable(t.id); }
       for (const r of this.rooms) { await this.deleteRoom(r.id); }
+      
       this.rooms = [];
       this.tables = [];
       this.bookings = [];
       this.auditLogs = [];
+      this.users = [];
+      this.roles = [];
+      this.organizations = [];
+      this.organizationAccess = [];
+      
       await this.seedDemoData();
     },
 
     async seedDemoData() {
       const today = new Date().toISOString().split('T')[0];
       
+      // 1. Seed Rooms
       const r1 = await this.createRoom({ name: 'Main Hall', description: 'Primary dining area', floor_number: 1, type: 'indoor', status: 'active', layout_width: 800, layout_height: 500 });
       const r2 = await this.createRoom({ name: 'VIP Room', description: 'Private VIP dining', floor_number: 1, type: 'vip', status: 'active', layout_width: 600, layout_height: 400 });
       const r3 = await this.createRoom({ name: 'Outdoor Terrace', description: 'Al fresco dining', floor_number: 1, type: 'outdoor', status: 'active', layout_width: 700, layout_height: 450 });
@@ -372,25 +666,80 @@ export const useMainStore = defineStore('mainStore', {
 
       if(!r1) return; // Prevent seeding if backend isn't ready
 
-      const t1 = await this.createTable({ room_id: r1.id, code: 'A01', name: 'Table A01', shape: 'square', capacity_min: 2, capacity_max: 4, chair_count: 4, status: 'available', x_position: 60, y_position: 60, width: 80, height: 80, rotation: 0, notes: '' });
+      // 2. Seed Tables
+      await this.createTable({ room_id: r1.id, code: 'A01', name: 'Table A01', shape: 'square', capacity_min: 2, capacity_max: 4, chair_count: 4, status: 'available', x_position: 60, y_position: 60, width: 80, height: 80, rotation: 0, notes: '' });
       const t2 = await this.createTable({ room_id: r1.id, code: 'A02', name: 'Table A02', shape: 'square', capacity_min: 2, capacity_max: 4, chair_count: 4, status: 'occupied', x_position: 200, y_position: 60, width: 80, height: 80, rotation: 0, notes: '' });
-      const t3 = await this.createTable({ room_id: r1.id, code: 'A03', name: 'Table A03', shape: 'round', capacity_min: 4, capacity_max: 6, chair_count: 6, status: 'available', x_position: 340, y_position: 60, width: 90, height: 90, rotation: 0, notes: '' });
+      await this.createTable({ room_id: r1.id, code: 'A03', name: 'Table A03', shape: 'round', capacity_min: 4, capacity_max: 6, chair_count: 6, status: 'available', x_position: 340, y_position: 60, width: 90, height: 90, rotation: 0, notes: '' });
       const t4 = await this.createTable({ room_id: r1.id, code: 'A04', name: 'Table A04', shape: 'rectangle', capacity_min: 4, capacity_max: 8, chair_count: 8, status: 'reserved', x_position: 60, y_position: 220, width: 160, height: 80, rotation: 0, notes: '' });
-      const t5 = await this.createTable({ room_id: r1.id, code: 'A05', name: 'Table A05', shape: 'round', capacity_min: 2, capacity_max: 2, chair_count: 2, status: 'cleaning', x_position: 340, y_position: 230, width: 70, height: 70, rotation: 0, notes: '' });
-      const t6 = await this.createTable({ room_id: r1.id, code: 'A06', name: 'Table A06', shape: 'square', capacity_min: 2, capacity_max: 4, chair_count: 4, status: 'available', x_position: 500, y_position: 60, width: 80, height: 80, rotation: 0, notes: '' });
-      const t7 = await this.createTable({ room_id: r2.id, code: 'VIP-01', name: 'VIP 1', shape: 'round', capacity_min: 4, capacity_max: 8, chair_count: 8, status: 'available', x_position: 80, y_position: 80, width: 110, height: 110, rotation: 0, notes: 'Premium' });
+      await this.createTable({ room_id: r1.id, code: 'A05', name: 'Table A05', shape: 'round', capacity_min: 2, capacity_max: 2, chair_count: 2, status: 'cleaning', x_position: 340, y_position: 230, width: 70, height: 70, rotation: 0, notes: '' });
+      await this.createTable({ room_id: r1.id, code: 'A06', name: 'Table A06', shape: 'square', capacity_min: 2, capacity_max: 4, chair_count: 4, status: 'available', x_position: 500, y_position: 60, width: 80, height: 80, rotation: 0, notes: '' });
+      await this.createTable({ room_id: r2.id, code: 'VIP-01', name: 'VIP 1', shape: 'round', capacity_min: 4, capacity_max: 8, chair_count: 8, status: 'available', x_position: 80, y_position: 80, width: 110, height: 110, rotation: 0, notes: 'Premium' });
       const t8 = await this.createTable({ room_id: r2.id, code: 'VIP-02', name: 'VIP 2', shape: 'rectangle', capacity_min: 6, capacity_max: 12, chair_count: 12, status: 'reserved', x_position: 300, y_position: 80, width: 180, height: 90, rotation: 0, notes: 'Large party' });
-      const t9 = await this.createTable({ room_id: r3.id, code: 'T-01', name: 'Terrace 1', shape: 'round', capacity_min: 2, capacity_max: 4, chair_count: 4, status: 'available', x_position: 80, y_position: 80, width: 80, height: 80, rotation: 0, notes: '' });
-      const t10 = await this.createTable({ room_id: r3.id, code: 'T-02', name: 'Terrace 2', shape: 'round', capacity_min: 2, capacity_max: 4, chair_count: 4, status: 'occupied', x_position: 250, y_position: 80, width: 80, height: 80, rotation: 0, notes: '' });
-      const t11 = await this.createTable({ room_id: r4.id, code: 'B-01', name: 'Bar 1', shape: 'square', capacity_min: 1, capacity_max: 2, chair_count: 2, status: 'available', x_position: 60, y_position: 60, width: 60, height: 60, rotation: 0, notes: '' });
-      const t12 = await this.createTable({ room_id: r4.id, code: 'B-02', name: 'Bar 2', shape: 'square', capacity_min: 1, capacity_max: 2, chair_count: 2, status: 'available', x_position: 160, y_position: 60, width: 60, height: 60, rotation: 0, notes: '' });
+      await this.createTable({ room_id: r3.id, code: 'T-01', name: 'Terrace 1', shape: 'round', capacity_min: 2, capacity_max: 4, chair_count: 4, status: 'available', x_position: 80, y_position: 80, width: 80, height: 80, rotation: 0, notes: '' });
+      await this.createTable({ room_id: r3.id, code: 'T-02', name: 'Terrace 2', shape: 'round', capacity_min: 2, capacity_max: 4, chair_count: 4, status: 'occupied', x_position: 250, y_position: 80, width: 80, height: 80, rotation: 0, notes: '' });
+      await this.createTable({ room_id: r4.id, code: 'B-01', name: 'Bar 1', shape: 'square', capacity_min: 1, capacity_max: 2, chair_count: 2, status: 'available', x_position: 60, y_position: 60, width: 60, height: 60, rotation: 0, notes: '' });
+      await this.createTable({ room_id: r4.id, code: 'B-02', name: 'Bar 2', shape: 'square', capacity_min: 1, capacity_max: 2, chair_count: 2, status: 'available', x_position: 160, y_position: 60, width: 60, height: 60, rotation: 0, notes: '' });
 
+      // 3. Seed Bookings
       if(t4) await this.createBooking({ customer_name: 'Andi Pratama', customer_phone: '+6281234567890', party_size: 4, booking_date: today, start_time: '19:00', end_time: '20:30', duration_minutes: 90, status: 'confirmed', channel: 'whatsapp', assigned_table_id: t4.id, special_request: 'Birthday celebration', internal_notes: '' });
       if(t2) await this.createBooking({ customer_name: 'Siti Rahayu', customer_phone: '+6287654321098', party_size: 2, booking_date: today, start_time: '12:00', end_time: '13:30', duration_minutes: 90, status: 'seated', channel: 'kiosk', assigned_table_id: t2.id, special_request: '', internal_notes: '' });
       if(t8) await this.createBooking({ customer_name: 'Budi Santoso', customer_phone: '+6289012345678', party_size: 8, booking_date: today, start_time: '20:00', end_time: '22:00', duration_minutes: 120, status: 'confirmed', channel: 'admin', assigned_table_id: t8.id, special_request: 'Corporate dinner', internal_notes: 'VIP client' });
       
-      // reload after seeding to make sure states match backend fully
+      // 4. Seed Organizations (Kasir Pintar Internasional)
+      const rootOrg = await this.createOrg({ name: 'PT Kasir Pintar Internasional', code: 'KPI', parent_id: null });
+      if (rootOrg) {
+        const sdiOrg = await this.createOrg({ name: 'Sinergi Dimensi Informatika', code: 'SDI', parent_id: rootOrg.id });
+        await this.createOrg({ name: 'Product & Design', code: 'PRODUCT_DESIGN', parent_id: rootOrg.id });
+        await this.createOrg({ name: 'Marketing & Sales', code: 'MARKETING_SALES', parent_id: rootOrg.id });
+
+        if (sdiOrg) {
+          const finOrg = await this.createOrg({ name: 'Finance', code: 'FINANCE', parent_id: sdiOrg.id });
+          await this.createOrg({ name: 'Operational', code: 'OPERATIONAL', parent_id: sdiOrg.id });
+          const techOrg = await this.createOrg({ name: 'Technology', code: 'TECHNOLOGY', parent_id: sdiOrg.id });
+
+          if (techOrg) {
+            await this.createOrg({ name: 'Artificial Intelligence', code: 'AI', parent_id: techOrg.id });
+            const backendOrg = await this.createOrg({ name: 'Backend', code: 'BACKEND', parent_id: techOrg.id });
+
+            // 5. Seed Roles
+            const superadminRole = await this.createRole({ name: 'Super Administrator', code: 'SUPER_ADMIN', description: 'Akses penuh ke seluruh sistem' });
+            const pmRole = await this.createRole({ name: 'Project Manager', code: 'PROJECT_MANAGER', description: 'Mengelola proyek dan operasional tim' });
+            const devRole = await this.createRole({ name: 'Developer', code: 'DEVELOPER', description: 'Mengembangkan sistem backend/frontend' });
+            const mobileRole = await this.createRole({ name: 'Mobile User', code: 'MOBILE_USER', description: 'Pengguna sistem khusus versi mobile' });
+            const financeRole = await this.createRole({ name: 'Finance Staff', code: 'FINANCE_STAFF', description: 'Mengelola transaksi dan keuangan organisasi' });
+
+            // 6. Seed Users
+            const user1 = await this.createUser({ name: 'Rakha Updateda', email: 'rakhacimano@gmail.com', status: 'active' });
+            const user2 = await this.createUser({ name: 'Didit Sepiyanto', email: 'didit@kasirpintar.co.id', status: 'active' });
+            const user3 = await this.createUser({ name: 'Arum Kinasih', email: 'arum@kasirpintar.co.id', status: 'active' });
+            const user4 = await this.createUser({ name: 'Lutfi Hakim', email: 'lutfi@kasirpintar.co.id', status: 'active' });
+            const user5 = await this.createUser({ name: 'Gus Nando', email: 'nando@kasirpintar.co.id', status: 'active' });
+            await this.createUser({ name: 'John Doe', email: 'johndoe@gmail.com', status: 'active' });
+
+            // 7. Seed Access Mappings (Linking Users to Roles inside specific Organizations)
+            if (user1 && backendOrg && mobileRole) {
+              await this.createAccess({ user_id: user1.id, organization_id: backendOrg.id, role_id: mobileRole.id });
+            }
+            if (user2 && rootOrg && superadminRole) {
+              await this.createAccess({ user_id: user2.id, organization_id: rootOrg.id, role_id: superadminRole.id });
+            }
+            if (user3 && finOrg && financeRole) {
+              await this.createAccess({ user_id: user3.id, organization_id: finOrg.id, role_id: financeRole.id });
+            }
+            if (user4 && techOrg && pmRole) {
+              await this.createAccess({ user_id: user4.id, organization_id: techOrg.id, role_id: pmRole.id });
+            }
+            const aiOrg = this.organizations.find(o => o.code === 'AI');
+            if (user5 && aiOrg && devRole) {
+              await this.createAccess({ user_id: user5.id, organization_id: aiOrg.id, role_id: devRole.id });
+            }
+          }
+        }
+      }
+
+      // reload after seeding to make sure states fully match backend
       await this.loadAllData();
     }
   }
 })
+

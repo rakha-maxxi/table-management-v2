@@ -7,13 +7,18 @@ const tableRoutes = require('./routes/tables');
 const bookingRoutes = require('./routes/bookings');
 const auditLogRoutes = require('./routes/auditLogs');
 const settingRoutes = require('./routes/settings');
+const userRoutes = require('./routes/users');
+const roleRoutes = require('./routes/roles');
+const organizationRoutes = require('./routes/organizations');
+const organizationAccessRoutes = require('./routes/organizationAccess');
 
 const fastify = Fastify({ logger: true });
 
 async function start() {
   try {
     await fastify.register(cors, {
-      origin: '*' // Allow all origins for development
+      origin: '*', // Allow all origins for development
+      methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS']
     });
 
     // Register Swagger for API Documentation
@@ -49,6 +54,10 @@ async function start() {
     fastify.register(bookingRoutes, { prefix: '/api/bookings' });
     fastify.register(auditLogRoutes, { prefix: '/api/audit-logs' });
     fastify.register(settingRoutes, { prefix: '/api/settings' });
+    fastify.register(userRoutes, { prefix: '/api/users' });
+    fastify.register(roleRoutes, { prefix: '/api/roles' });
+    fastify.register(organizationRoutes, { prefix: '/api/organizations' });
+    fastify.register(organizationAccessRoutes, { prefix: '/api/organization-access' });
 
     // Root route
     fastify.get('/', async (request, reply) => {

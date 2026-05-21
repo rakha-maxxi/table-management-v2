@@ -53,6 +53,26 @@ const router = createRouter({
       path: '/settings',
       name: 'settings',
       component: Settings
+    },
+    {
+      path: '/users',
+      name: 'users',
+      component: () => import('@/views/Users.vue')
+    },
+    {
+      path: '/roles',
+      name: 'roles',
+      component: () => import('@/views/Roles.vue')
+    },
+    {
+      path: '/organizations',
+      name: 'organizations',
+      component: () => import('@/views/Organizations.vue')
+    },
+    {
+      path: '/organization-access',
+      name: 'organization-access',
+      component: () => import('@/views/OrganizationAccess.vue')
     }
   ]
 })

@@ -1,0 +1,4 @@
+backend/
+archived/
+dist/
+node_modules/

@@ -186,7 +186,7 @@ Pages.settings = function(c) {
           <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.5">Semua data disimpan di localStorage peramban Anda. Anda dapat mengatur ulang ke data demo atau menghapus semuanya.</p>
           <div style="display:flex;gap:8px">
             <button class="btn btn-secondary" onclick="Pages.exportData()"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Ekspor JSON</button>
-            <button class="btn btn-danger" onclick="App.confirm('Atur ulang semua data ke default demo?',()=>{Store.reset();App.toast(\'Data diatur ulang ke default\');App.render();})">Atur Ulang Data</button>
+            <button class="btn btn-danger" onclick="App.confirm('Atur ulang semua data ke default demo?',()=>{Store.reset();App.toast('Data diatur ulang ke default');App.render();})">Atur Ulang Data</button>
           </div>
         </div>
       </div>
