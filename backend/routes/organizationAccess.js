@@ -6,7 +6,8 @@ const accessBodySchema = {
   properties: {
     user_id: { type: 'string' },
     organization_id: { type: 'string' },
-    role_id: { type: 'string' }
+    role_id: { type: 'string' },
+    permissions: { type: 'string' }
   }
 };
 
@@ -21,6 +22,7 @@ module.exports = async function (fastify, opts) {
         oa.user_id, 
         oa.organization_id, 
         oa.role_id, 
+        oa.permissions,
         oa.created_at,
         u.name AS user_name,
         u.email AS user_email,
@@ -71,9 +73,9 @@ module.exports = async function (fastify, opts) {
     const now = new Date().toISOString();
     
     await fastify.db.run(
-      `INSERT INTO organization_access (id, user_id, organization_id, role_id, created_at) 
-       VALUES (?, ?, ?, ?, ?)`,
-      [id, data.user_id, data.organization_id, data.role_id, now]
+      `INSERT INTO organization_access (id, user_id, organization_id, role_id, permissions, created_at) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [id, data.user_id, data.organization_id, data.role_id, data.permissions || '[]', now]
     );
 
     // Retrieve joined newly created mapping to return
@@ -83,6 +85,7 @@ module.exports = async function (fastify, opts) {
         oa.user_id, 
         oa.organization_id, 
         oa.role_id, 
+        oa.permissions,
         oa.created_at,
         u.name AS user_name,
         u.email AS user_email,

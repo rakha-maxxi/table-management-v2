@@ -216,7 +216,7 @@ async function toggleStatus(user) {
                       color: var(--text-secondary);
                     "
                   >
-                    <RiMailLine size="14" style="color: var(--text-muted)" />
+                    <RiMailLine size="14" style="color: var(--text-muted); width: 14px; height: 14px; flex-shrink: 0;" />
                     <span>{{ u.email }}</span>
                   </div>
                 </td>

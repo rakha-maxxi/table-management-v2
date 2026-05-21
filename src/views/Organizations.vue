@@ -256,7 +256,12 @@ async function deleteOrg(id) {
                       gap: 4px;
                     "
                   >
-                    <RiBuildingLine size="12" style="color: var(--text-muted)" />
+                    <RiBuildingLine
+                      size="12"
+                      style="color: var(--text-muted)"
+                      width="24"
+                      height="24"
+                    />
                     {{
                       flattenedOrgs.find((parent) => parent.id === o.parent_id)?.name ||
                       'Induk Tidak Ditemukan'

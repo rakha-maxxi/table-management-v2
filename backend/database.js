@@ -112,6 +112,7 @@ async function setupDatabase() {
       user_id TEXT NOT NULL,
       organization_id TEXT NOT NULL,
       role_id TEXT NOT NULL,
+      permissions TEXT DEFAULT '[]',
       created_at TEXT,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
       FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
@@ -119,6 +120,17 @@ async function setupDatabase() {
       UNIQUE(user_id, organization_id)
     );
   `);
+
+  // Migration: Add permissions column to organization_access if it doesn't exist
+  try {
+    const tableInfo = await db.all("PRAGMA table_info(organization_access);");
+    const hasPermissions = tableInfo.some(col => col.name === 'permissions');
+    if (!hasPermissions) {
+      await db.exec("ALTER TABLE organization_access ADD COLUMN permissions TEXT DEFAULT '[]';");
+    }
+  } catch (err) {
+    console.error('Migration error adding permissions column:', err);
+  }
 
   return db;
 }

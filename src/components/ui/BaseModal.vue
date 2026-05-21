@@ -1,10 +1,31 @@
 <script setup>
+import { onUnmounted, watch } from 'vue'
 import { RiCloseLine } from 'vue-remix-icons'
-defineProps({
+
+const props = defineProps({
   modelValue: { type: Boolean, default: false },
   title: { type: String, default: 'Modal' }
 })
-defineEmits(['update:modelValue'])
+
+const emit = defineEmits(['update:modelValue'])
+
+function handleKeyDown(e) {
+  if (e.key === 'Escape') {
+    emit('update:modelValue', false)
+  }
+}
+
+watch(() => props.modelValue, (isOpen) => {
+  if (isOpen) {
+    document.addEventListener('keydown', handleKeyDown)
+  } else {
+    document.removeEventListener('keydown', handleKeyDown)
+  }
+}, { immediate: true })
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeyDown)
+})
 </script>
 
 <template>
